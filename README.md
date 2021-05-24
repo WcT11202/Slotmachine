@@ -3,3 +3,4 @@
 再將casino2匯入資料庫  
 以nodemon app啟動  
 瀏覽器輸入 localhost:3002
+demo: https://youtu.be/658MRU1dcvA
