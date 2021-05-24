@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首頁</title>
+</head>
+
+<body>
+    <% if(!session.user) { %>
+    <a href="/login">登入</a>
+    <% }else { %>
+    <a href="/add">新增表單</a>
+    <!-- 新增登出按鈕 -->
+    <a href="/logout">登出</a>
+    <% } %>
+    <table>
+        <thead>
+            <th>#</th>
+            <th>名稱</th>
+            <th>電話</th>
+            <th>地址</th>
+            <th>成人口罩庫存</th>
+            <th>孩童口罩庫存</th>
+        </thead>
+        <tbody>
+            <% data.forEach((item ,index) => { %>
+            <tr>
+                <td><%= index+1%></td>
+                <td><%= item.name%></td>
+                <td><%= item.phone%></td>
+                <td><%= item.address%></td>
+                <td><%= item.adult_mask%></td>
+                <td><%= item.child_mask%></td>
+                <% if(session.user) { %>
+                <td>
+                    <!-- 開啟編輯modal -->
+                    <a href="#ex1" rel="modal:open"><button onclick="Edit(<%= item.id%>)">編輯</button></a>
+                    <!-- 開啟刪除確認modal -->
+                    <a href="#ex2" rel="modal:open"><button onclick="Delete(<%= item.id%>)">刪除</button></a>
+                </td>
+                <% } %>
+            </tr>
+            <% }) %>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4" style="text-align: center;">
+                    <% for(var i = 1; i <= last_page; i++) { %>
+                    <span><a href="/<%= i%>"><%= i%></a></span>
+                    <% } %>
+                </td colspan="2">
+                <td>
+                    <p>總數 <%= total_nums%> 筆，共 <%= curr_page%>/<%= last_page%> 頁</p>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+   
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <!-- jQuery Modal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+
+    <script>
+        
+       
+
+       
+
+        function serializeToJSON(data) {
+            var values = {};
+            for (index in data) {
+                values[data[index].name] = data[index].value;
+            }
+            return JSON.stringify(values)
+        }
+    </script>
+</body>
+
+</html>

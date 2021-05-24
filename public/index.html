@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/app.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="js/slotmachine_v2.js"></script>
+   
+    <style>
+       
+    </style>
+</head>
+
+<body>
+    <div class="container" style="position: relative;top:50px">
+
+        <div id="main" class="panel-body "style="position: relative;">
+
+            <div class="slotwrapper">
+                <ul class="ring" id="ring1" style="top:0px">
+                </ul>
+                <ul class="ring" id="ring2" style="top:0px">
+                </ul>
+                <ul class="ring" id="ring3" style="top:0px">
+                </ul>
+                <ul class="ring" id="ring4" style="top:0px">
+                </ul>
+                <ul class="ring" id="ring5" style="top:0px">
+                </ul>
+            </div>
+
+            <div id="resultbg">
+                <p id="result">{{userwallet}}</p>
+            </div>
+            <div id="betbg">
+                <input id="bet" type="text" placeholder="1" value="10.00">
+            </div>
+
+            <div class="addlessbet">
+                <img src="./img/1x/addbet.png" id="add" alt=""><img src="./img/1x/lessbet.png" id="less" alt="">
+            </div>
+            <div id="betlinebg">
+                <span id="betline">50</span>
+            </div>
+            <div id="jackpotbg">
+                <span id="jackpot">0</span>
+            </div>
+            <div id="buttonSA">
+                <input type="image" v-on:click="handleBet" id="btnStart" src="./img/1x/Start.png">
+                <input type="image" v-on:click="handleAuto" id="btnAuto" src="./img/1x/Auto.png">
+                <img v-on:click="handleResult" id="imggetresult" src="./img/1x/gameresults.png" alt="">
+            </div>
+        </div>
+        <canvas id="myCanvas"></canvas>
+        <audio loop id="ingSound" src="./sounds/sloting.mp3" preload="metadata"></audio>
+        <audio id="endSound" src="./sounds/slotend.mp3" preload="metadata"></audio>
+        <audio id="winSound" src="./sounds/win.mp3" preload="metadata"></audio>
+    </div>
+
+    <script>
+        var vueMain = new Vue({
+            el: '#main',
+            data: {
+                testData: "OK",
+                userwallet: 0
+            },
+            created: function () {
+                $.ajax({
+                    type: "get",
+                    url: "/game/user",
+                    success: function (res) {
+                        vueMain.userwallet = JSON.parse(res)[0].UserWallet
+                        // console.log(JSON.parse(res).UserWallet)
+                    }
+                });
+            },
+            methods: {
+                handleResult:function(){
+                    location.href='./results.html'
+                },
+                handleBet: function () {
+                    fp = 500;
+                    StartGame();
+                },
+                handleAuto() {
+                    
+                    runtime++;
+                    fp = 250;
+                    //if()
+                    if (runtime == 1) {
+                        $('#btnAuto').attr("src","./img/1x/Stop.png")
+                        console.log(1)
+                        autogame = setInterval(function () {
+                            $('#btnStart').attr("disabled","disabled");
+                            StartGame()
+                        }, 3000);
+
+                    } else {
+                        $('#btnAuto').attr("src","./img/1x/Auto.png")
+                        console.log("stop")
+                        clearInterval(autogame);
+                        runtime = 0;
+                    }
+                    //console.log(runtime)
+                }
+            }
+        })
+
+        var ary = [
+            ['cherry', 'orange', 'grape', 'cookie', 'bell', 'bar', '777'],
+            ['orange', 'grape', 'cherry', 'cookie', '777', 'bell', 'bar'],
+            ['cookie', 'cherry', 'orange', '777', 'bar', 'grape', 'bell'],
+            ['grape', 'orange', 'bell', 'bar', 'cherry', '777', 'cookie'],
+            ['bell', 'grape', 'cookie', '777', 'orange', 'bar', 'cherry']
+        ]
+        var tempcss = document.querySelectorAll('.ring');
+        var slotR = [];
+        var count = 0;
+        var finCount = 0;
+        var temp = 0;
+        var runtime = 0;
+        var fp = 500;
+        var autogame = null;
+        var keepgame = 1;
+        // var slotresult=document.getElementById('slotresult');
+        var rwdW = parseInt($('.slotwrapper').css("width")) - 20;
+        var rwdH = parseInt($('.slotwrapper').css("height"))
+        $('#myCanvas').attr("width", rwdW);
+        $('#myCanvas').attr("height", rwdH)
+        var ctx = myCanvas.getContext("2d");
+        //加減下注金額
+        $('#less').on('click', function () {
+            var bet = parseFloat($("#bet").val());
+            if (bet <= 1) {
+                $("#less").removeAttr("disabled");
+            } else {
+                bet -= 1;
+                $('#bet').val(bet.toFixed(2))
+            }
+        })
+        $('#add').on('click', function () {
+            var bet = parseFloat($("#bet").val());
+            if (bet >= 10) {
+                $("#add").removeAttr("disabled");
+            } else {
+                bet += 1;
+                $('#bet').val(bet.toFixed(2))
+            }
+        })
+
+        function resultIndex(count, ary) {
+
+            for (j = 0; j <= 10; j += 5) {
+                for (i = 1; i <= 5; i++) {
+                    //for(k=0;k<3;k++){
+                    count[j + i - 1] = ary[i - 1];
+                }
+            }
+            for (i = 5; i < 10; i++) {
+
+                count[i] = ((count[i] + 1) % 7);
+
+            }
+            for (i = 10; i < 15; i++) {
+
+                count[i] = ((count[i] + 2) % 7);
+
+            }
+            for (i = 0; i < 15; i++) {
+                count[i] = count[i] % 7;
+            }
+            return count;
+        }
+        //startGame
+        StartGame = () => {
+            $("#btnStart").attr("disabled","disabled");
+            slotR = [];
+            var score = parseFloat($("#result").text()).toFixed(2);
+            var bet = parseFloat($('#bet').val()) * 50;
+            var scoreBefore = 0
+            var winCount = 0;
+            bettime = new Date().toLocaleString('zh-TW', {
+                timeZone: 'Asia/Taipei',
+                hour12: false
+            });
+            //console.log(bet)
+            if (score < bet) {
+               // $("#btnStart").attr("disabled", true);
+               $('#btnStart').attr("disabled","disabled");
+                alert("餘額不足!");
+                clearInterval(autogame);
+            } else {
+                score -= bet;
+
+                $("#result").text(score.toFixed(2));
+
+                $("#btnStart").attr("disabled","disabled");
+                $('.slotwrapper ul').playSpin();
+                ingSound.play();
+                let userwallet = parseFloat($("#result").text());
+                console.log("start:" + userwallet)
+                $.ajax({
+                    type: "put",
+                    url: "/game/user",
+                    data: {
+                        UserWallet: userwallet
+                    }
+                });
+            }
+        }
+        creatRing1 = function () {
+            var rings = document.querySelectorAll('.ring');
+            //console.log($('#ring1'))
+            for (var i = 0; i < 5; i++) {
+                for (var j = 0; j < 7; j++) {
+                    $(rings[i]).append('<li><img src="./img/' + ary[i][j] + '.png" /></li>')
+                }
+            }
+        };
+        creatRing1();
+    </script>
+    <script src="./js/resultLine.js"></script>
+    <script src="./js/bonuscacl.js"></script>
+
+</body>
+
+</html>
